@@ -1,5 +1,6 @@
 ---
 name: dev
+cc_switch_update_marker: 2026-08-06
 description: >
   强制执行三阶段开发工作流（分析→细化→执行），适用于所有编码与软件工程任务。
   当用户要求修改代码、修复 Bug、实现功能、重构、或进行任何 Minecraft Mod 开发任务时触发。
