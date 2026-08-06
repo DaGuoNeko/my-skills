@@ -115,7 +115,7 @@ description: >
 
 ### 运行环境
 
-- 项目 Mod 脚本运行于 **Python 2.7**（禁止 f-string、类型标注、`print()` 函数、`async/await`）
+- 项目 Mod 脚本运行于 **Python 2.7**（禁止 f-string、类型标注、`print()` 函数、`async/await`、带u字符串）
 - 命令行工具使用 Python 3.10+
 - 使用 `:type:` 注释字符串提供 IDE 类型提示：
   ```python
@@ -126,7 +126,7 @@ description: >
 ### Minecraft 开发
 
 - 本项目为网易 Minecraft 基岩版 Add-On（行为包 + 资源包）
-- 可随时调用 ModSDK 查询接口用法、事件、组件
+- 可随时调用 MCP 的 ModSDK 查询接口用法、事件、组件
 - 所有 Mod 开发任务遵循网易 ModSDK 规范
 
 ---
