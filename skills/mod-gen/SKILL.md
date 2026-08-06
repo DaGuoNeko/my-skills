@@ -1,5 +1,6 @@
 ---
 name: mod-gen
+cc_switch_update_marker: 2026-08-06-b
 description: >
   网易 Minecraft MOD 脚手架生成器：通过模板克隆生成行为包+资源包+脚本框架。
   当用户提到生成 MOD、创建模组、脚手架、模板、custom_warehouse、占位符替换、
