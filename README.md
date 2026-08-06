@@ -24,7 +24,7 @@ my-skills/
 1. 打开 CC Switch 的 Skills 页面。
 2. 点击「仓库管理」→「添加仓库」。
 3. 填写：
-   - Owner: `DaguoMeow`
+   - Owner: `DaGuoNeko`
    - Name: `my-skills`
    - Branch: `main`
    - Subdirectory: `skills`
