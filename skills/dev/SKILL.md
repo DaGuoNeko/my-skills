@@ -125,6 +125,7 @@ description: >
 
 ### Minecraft 开发
 
+- 若项目依赖 `DAGUOMIAO_API_MOD`，涉及公共 UI、选择器、指令库、配置或跨存档时读取 [前置接入技能](../daguomiao-api/SKILL.md)，先核对公共入口再实现业务逻辑。修改前置时检查受影响调用方和旧存档契约。
 - 本项目为网易 Minecraft 基岩版 Add-On（行为包 + 资源包）
 - 可随时调用 MCP 的 ModSDK 查询接口用法、事件、组件
 - 所有 Mod 开发任务遵循网易 ModSDK 规范

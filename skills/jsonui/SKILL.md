@@ -11,7 +11,9 @@ description: >
 
 ## 加载策略
 
+- 项目依赖 `DAGUOMIAO_API_MOD` 时，公共组件与控制器接入先读 [前置 UI 参考](../daguomiao-api/references/ui.md)。本技能负责 JsonUI 语法，具体参数以实际加载的前置 JSON / Python 为准；不从业务模组复制前置已有的选择器或分组列表。
 - 本文件（SKILL.md）：快速索引，始终在触发时加载
+- 原版模板、工厂、输入焦点、跨控件绑定或原版 UI 覆盖：读 [原版 JsonUI 补充](references/vanilla.md)。包含用户提供的 v1.26.40.27-preview 专题检索入口；预览版示例须核对网易目标版本，不能直接当作兼容保证。
 - `references/guide.md`：完整开发手册（~1900 行），遇到以下情况时读取：
   - 需要具体控件属性/写法（如 button、slider、toggle、grid）
   - 需要数据绑定详细语法（ViewBinder、collection、binding_type）
@@ -26,7 +28,7 @@ description: >
 | 符号 | 名称 | 生效时机 | 用途 |
 |------|------|---------|------|
 | `$` | 变量 | JSON 加载时（静态） | 值替换、配置传递 |
-| `#` | 绑定 | 运行时（动态） | 动态数据显示（Python 驱动） |
+| `#` | 绑定 | 运行时（动态） | 引擎、控件属性或网易 Python 提供的数据 |
 | `@` | 继承 | JSON 加载时 | 组件复用 |
 
 ---
@@ -75,7 +77,7 @@ description: >
 |------|---------|---------|
 | 时机 | JSON 加载时 | 运行时 |
 | 可变 | 否 | 是（实时更新） |
-| 来源 | JSON 配置 | Python ViewBinder |
+| 来源 | JSON 配置及引擎变量 | 引擎数据、控件属性、网易 Python ViewBinder |
 
 ---
 

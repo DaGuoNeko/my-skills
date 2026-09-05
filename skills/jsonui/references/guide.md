@@ -1,5 +1,7 @@
 # Minecraft 基岩版 JsonUI 开发规范
 
+原版工厂、输入焦点与跨版本边界见 [原版 JsonUI 补充](vanilla.md)；依赖 DAGUOMIAO_API_MOD 的公共组件参数以实际前置为准。
+
 > 知识来源：[猫猫子 JsonUI 教程](https://www.yuque.com/maomaozi-hldyx/bgelcp)（作者未知，由猫猫子整理发布）
 > Content was rephrased for compliance with licensing restrictions.
 
@@ -331,14 +333,14 @@ bottom_left  bottom_middle  bottom_right
 |------|---------|---------|
 | 生效时机 | JSON 加载时 | 运行时 |
 | 能否改变 | 不能 | 能（实时更新） |
-| 数据来源 | JSON 配置 | Python 代码 |
+| 数据来源 | JSON 配置及引擎变量 | 引擎数据、控件属性或网易 Python 代码 |
 | 用途 | 配置传递 | 动态数据显示 |
 
 ---
 
 ## 七、数据绑定（#）
 
-绑定在运行时动态更新，数据由 Python 通过 `ViewBinder` 注册。
+绑定在运行时读取数据。原版绑定可由引擎或控件属性提供；网易自定义数据可由 Python 通过 `ViewBinder` 注册。下文 Python 示例针对网易环境。
 
 ### 在 JSON 中声明绑定
 

@@ -5,20 +5,20 @@ description: >
 ---
 # Skill: modui — 网易 MC 基岩版 Mod UI 统一规范
 
-本技能提取自 `custom_warehouse` 和 `quest_engine` 两个正式项目的 UI 设计体系，作为**所有后续 UI 编写的唯一参考标准**。
+本技能提取自 `custom_warehouse` 和 `quest_engine` 的 UI 设计体系，用于布局和绑定约定。依赖 `DAGUOMIAO_API_MOD` 的项目先阅读 [前置接入技能](../daguomiao-api/SKILL.md) 及其 UI 参考，复用当前前置的公共能力。
 
 ## 规范优先级（强制）
 
-编写 UI 时按以下优先级取用规范，**本技能为第一参考来源**（结构、布局、绑定、控件参数、命名约定等核心规范以本技能为准）：
+在用户要求和项目实际接口契约内，按以下分工取用规范：
 
-1. **本技能（modui）**：结构、布局、绑定、控件参数、命名约定等，以本技能为权威参考
+1. **本技能（modui）**：结构、布局、视觉风格与命名约定；公共组件参数核对实际源码
 2. **`jsonui` 技能**：本技能未覆盖的纯语法问题（如 `$` / `#` / `@` 符号机制、控件 type 含义）可参考 `jsonui` 技能
 3. **ModSDK MCP 文档**：本技能未列出的 SDK API 签名，调 `search_api` / `get_api_detail` 查询
 4. **其他来源**（官方文档、社区示例、旧项目代码）：仅当以上 3 级均未覆盖时参考，且不得与本技能冲突
 
 > 本技能覆盖不了的场景（如新增 SDK API、引擎版本差异），应主动查 MCP 文档补全，不以本技能为唯一限制。
 
-> **冲突处理**：当任何其他来源的写法与本技能冲突时，**以本技能为准**。例如本技能 `main@common.base_screen` 只写 `$screen_content`，不写 `$is_hud` / `$is_modal` / `$close_on_player_hurt` / `$absorbs_input` 等非标准参数。
+> **冲突处理**：用户要求、项目实际加载的公共组件和 API 契约优先于这里的历史模板。以下业务模组自建公共库示例只用于解释实现；前置已有等价入口时直接复用。涉及引擎参数时核对实际版本，不因模板未列出就判定参数不受支持。
 
 ## 触发关键词
 
@@ -42,9 +42,9 @@ description: >
 | # | 铁律 | 说明 |
 |---|------|------|
 | 1 | **绑定优先** | 一切可见/可变属性优先用 `#binding` 驱动（数据→UI），仅交互回调用事件绑定（UI→数据）。`GetBaseUIControl().SetText()` 等直接操作仅在无法用绑定表达时使用 |
-| 2 | **公共库优先** | 写新控件前先查 `*_common.json` 有无现成 `M_` 组件可继承；有则 `@<ns>.<组件名>` 复用，无则先补公共库再使用 |
-| 3 | **Modal 动态注入** | 弹窗/选择器/Toast 不在每屏 JSON 中声明，用 `CreateChildControl` 运行时从公共库注入 + `CreateDynamicBind` 挂闭包 |
-| 4 | **绝不硬编码路径** | 贴图路径用 `($全局变量名 + '/xxx')` 绑定表达式（公共库）或 `textures/ui/<modname>/xxx` 字面路径（screen），禁止猜路径、禁止跨 mod 引用 |
+| 2 | **公共库优先** | 先查已依赖前置及业务公共库，有现成组件或控制器则复用；缺失时按任务范围决定扩展共享库或实现业务控件 |
+| 3 | **Modal 注册** | 按组件契约动态注入或绑定预置控件；前置部分注册方法支持 `dynamic_create=False`。动态绑定在 `Create()` 阶段完成 |
+| 4 | **真实资源路径** | 查实际贴图和 namespace；允许引用已声明依赖的前置资源，避免复制整套公共贴图或猜路径 |
 | 5 | **`common.base_screen` 默认 `is_showing_menu: true`** | `PushScreen` 打开的业务界面需要 `is_showing_menu: true`。网易 `common.base_screen` 已内置该默认值，因此 `main@common.base_screen` 只写 `$screen_content` 即可，无需显式覆盖。若继承自其他基类则需手动传 `$is_showing_menu: true` |
 
 ### Python 2.7 约束（全适用）
@@ -721,7 +721,7 @@ def Create(self):
     self.mclienSystem.RegisterItemsTipsPanel(self, self.base_paths)
 ```
 
-> **⚠️ 前置条件**：`RegisterTipsPanel`、`ResiPopup`、`RegisterContPanel`、`RegisterItemsTipsPanel` 是 **ClientSystem 上需自行实现的方法**，不是 SDK 内置 API。底层均通过 `_inject` 封装（见下方），需要在 ClientSystem 类中逐一实现。如果未定义即调用，运行时会 `AttributeError`。
+> `RegisterTipsPanel`、`ResiPopup`、`RegisterContPanel`、`RegisterItemsTipsPanel` 不是 SDK 内置 API。`DAGUOMIAO_API_MOD` 已提供这些入口：依赖此前置时通过其 ClientSystem 实例调用，不需要在业务 ClientSystem 重写。下方 `_inject` 仅供不使用前置的自建公共库参考，不能假定业务系统自动拥有这些方法。
 
 底层调用：
 
@@ -2113,9 +2113,9 @@ def AddGameDevLogList(self, text):
 
 ## 十五、公共库跨屏控件详解（补充）
 
-### 15.1 M_CUSBOX_* 下拉框（当前仅 quest_engine 实现，可移植）
+### 15.1 M_CUSBOX_* 下拉框（优先使用前置）
 
-> 此组件目前仅 quest_engine 的 `<modname>_common.json` 中有完整实现。**其他项目如需使用**：需将 quest_engine 公共库中的 `M_CUSBOX_BTN` / `M_CUSBOX_PANEL` / `M_CUSBOX_GRID` 三件套连同绑定逻辑一并移植到自己的 `<modname>_common.json`，并按 §七 的 `CreateChildControl` 注入模式接入。
+> 前置已提供 `API_RegisterCusBoxPanel` / `API_OpenCusBoxPanel` 和兼容入口 `ResiCusBoxUi`。依赖前置的项目按 [公共 UI 接入](../daguomiao-api/references/ui.md) 注册与打开，不再从 quest_engine 复制组件。以下代码仅说明旧调用形态；数据格式和参数以当前前置源码为准。
 
 `M_CUSBOX_BTN` + `M_CUSBOX_PANEL` + `M_CUSBOX_GRID` 三件套，实现选项按钮弹出选择列表：
 
@@ -2232,7 +2232,7 @@ UI 侧 5 元组绑定（`_texture` / `_id_aux` / `_custom_color` / `_trim_materi
 - [ ] 每个 screen JSON 含三键：`namespace` + `main@common.base_screen` + 根 panel
 - [ ] `main` 的 `$screen_content` 指回本文件根 panel
 - [ ] 贴图路径不硬编码，用全局变量或 `textures/ui/<modname>/` 标准路径
-- [ ] 所有 `M_` 组件从 `<modname>_common` 继承，非自定义重复
+- [ ] 公共组件从实际业务库或 `DAGUOMIAO_API_MOD_common` 继承，避免重复实现
 - [ ] 绑定名遵循 `_jh/_nr/_btn/_state/_visible/_is_` 后缀约定
 - [ ] collection 控件带 `binding_collection_name`
 - [ ] `#visible` 重定向用 `binding_name_override: "#visible"`
@@ -2258,4 +2258,4 @@ UI 侧 5 元组绑定（`_texture` / `_id_aux` / `_custom_color` / `_trim_materi
 
 ## 一句话总结
 
-> **先查公共库有无现成组件 → 绑定优先于直接操作 → Modal 动态注入不静态声明 → PushScreen 存实例到成员变量 → 绑定名带后缀 `_jh/_nr/_btn` → 关屏配套 PopScreen → Python 2.7 写法**
+> **先查前置和业务公共库 → 按真实组件契约注册与绑定 → PushScreen 保存实例并配套 PopScreen → 保留原有绑定和回调语义 → Python 2.7 写法**
