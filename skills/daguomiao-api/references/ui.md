@@ -16,6 +16,12 @@
 | 顶部货币 | `RegisterTopEcoList` | 处理可选经济模组缺失 |
 | 实体选择 | `ContAllEntityCusBoxList` + 公共 CusBox | `API_RegisterEntityPicker` / `API_OpenEntityPicker` 已弃用，新功能不用 |
 | 事件编辑 | `API_OpenEventEditor` | 先核对签名与回调格式 |
+| 数值滑块与输入框联动 | `API_RegisterSliderControl` | 见 [独立滑块](slider.md)，不要共用默认值/步数绑定 |
+| 八槽选轮 | `API_RegisterSelectionWheel` / `API_OpenSelectionWheel` | 见 [选轮与资源目录](selectors.md)，区分嵌入和独立屏幕 |
+| 贴图/音效选择 | `API_RegisterAssetProvider` / `API_OpenAssetSelector` | 见 [资源注册](selectors.md)，回调有三个参数 |
+| 模组配置入口 | `API_RegisterModSettings` / `API_RegisterModSetting` | 注册到奇异宝典；不是服务端 GlobalConfig |
+| 效果目录 | `ContAllEffectCusBoxList` | 标准 Effect 与自定义 Buff 合并；配合 CusBox 效果模式 |
+| 键盘按键目录 | `API_GetKeyboardKeyOptions` / `API_GetKeyboardKeyName` / `API_GetKeyboardKeyCode` / `API_GetKeyboardKeyMap` | 从公共入口取得名称与键码，具体筛选参数查源码 |
 
 ## 注册与资源
 
@@ -23,9 +29,13 @@
 
 PushScreen 的动态绑定在 `ScreenNode.Create()` 阶段注册。不要在第一次按钮点击时才创建 CusBox 绑定。`API_RegisterCusBoxPanel(ui_node, create_path, callback=None, force_update=True, dynamic_create=True)` 每个 Screen 复用一个公共面板。
 
-`API_OpenCusBoxPanel(ui_node, create_path, data_list, callback=None, title='请选择', selected_value=None)` 的选项为 `[[显示名, 业务值, 可选图标路径, 可选分类], ...]`，回调接收完整选项列表，预选按第二个元素匹配。未注册、空列表或无有效项目时返回 `False`。
+`API_OpenCusBoxPanel(ui_node, create_path, data_list, callback=None, title='请选择', selected_value=None, effect_config=None)` 的选项为 `[[显示名, 业务值, 可选图标路径, 可选分类], ...]`。普通模式回调接收完整选项列表，预选按第二个元素匹配。未注册、空列表或无有效项目时返回 `False`。
+
+`effect_config` 传 dict 时进入效果设置模式，可设置 `time`、`level`、`time_min`、`time_max`、`level_min`、`level_max`。选择后还需在设置区确认，回调改为含 `item`、`value`、`time`、`level` 的 dict；取消设置或关闭公共面板不回调。不要用普通模式的列表下标读取此结果。效果目录可用 `ContAllEffectCusBoxList(callback, force_refresh=False)`，自定义 Buff 变化可调用 `API_InvalidateCustomBuffCache()`；异步返回后先检查界面仍有效且是当前顶层。
 
 部分注册方法支持 `dynamic_create=False`，只绑定 JsonUI 预置控件；不要把“弹窗必须动态创建”作为普遍要求。应逐个确认目标方法签名、控件名称与层级，不能把该参数传给所有方法。注册失败返回 `None` 时处理失败，避免后续调用空控制器。
+
+注册返回值并不统一：例如 `RegisterTipsPanel` 返回 bool，不是控制器。`ShowTipsPanel` 在原版 `hud_screen` 为顶层时自动使用全局 HUD 提示，HUD 重建后可重新挂载；其他界面继续走注册面板。`isdisp=True` 延迟 0.5 秒显示，真正显示时由前置播放统一提示音。不要再复制旧的“只查 GetTopUINode 上 __TipsPanel__”实现。
 
 ## 分组列表
 

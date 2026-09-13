@@ -489,6 +489,8 @@ namespace 固定为 `<modname>_common`。所有 `M_` 组件用 `$` 变量参数�
 
 ### 5.5 Slider `M_slider`
 
+依赖 DAGUOMIAO_API_MOD 时，优先用 [公共 SliderControl](../daguomiao-api/references/slider.md) 注册独立 ID、业务范围与输入联动；仅修改 `$slider_name` 不会隔离数值和步数绑定。公共选轮和资源选择见 [选轮与资源目录](../daguomiao-api/references/selectors.md)。下表只解释底层模板参数。
+
 继承 `@common.slider`。
 
 | 参数 | 说明 |
