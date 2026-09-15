@@ -115,13 +115,22 @@ description: >
 
 ### 运行环境
 
-- 项目 Mod 脚本运行于 **Python 2.7**（禁止 f-string、类型标注、`print()` 函数、`async/await`、带u字符串）
+- 项目 Mod 脚本运行于 **Python 2.7**（禁止 f-string、类型标注、`print()` 函数、`async/await`）
 - 命令行工具使用 Python 3.10+
 - 使用 `:type:` 注释字符串提供 IDE 类型提示：
   ```python
   self.AnyEvent = AE.AnyEvent(self)
   """:type: re0Scripts.re0ServerSystem.AnyEvent.AnyEvent"""
   ```
+
+### 文本与编码
+
+- 普通项目数据、配置数据、注册数据及 JsonUI 绑定文本默认均为 Python 2.7 `str`，直接使用原值。
+- 严禁使用 `u"..."`、`u'...'`，也不要为普通数据编写 `_ToText`、`_ToUiText`、`_ToUnicodeText`、`_ToUtf8Text` 等通用转换方法。
+- 禁止对普通数据增加无依据的 `unicode` 类型判断、`.encode()`、`.decode()` 或 `str()`；只有接口文档或游戏实测确认存在类型差异时，才在真实接口边界局部处理。
+- `GetChinese()` 已确认返回 `unicode`，在调用处直接使用 `str(comp.GetChinese(...))`，不要为它建立通用转换层。
+- 引擎返回的 NBT 数据可能包含特殊封装或 `unicode`，读取时必须先核对实际数据结构，并只在对应 NBT 处理路径内按需转换，不能将处理扩散到普通项目数据。
+- `unicode_convert()` 可作为特殊情况备用，但不得用于普通配置、UI 或注册数据。
 
 ### Minecraft 开发
 
