@@ -1,0 +1,3 @@
+interface:
+  display_name: "网易基岩版模组踩坑指南"
+  short_description: "排查网易 ModSDK 生命周期、ModAttr 与同步陷阱"
