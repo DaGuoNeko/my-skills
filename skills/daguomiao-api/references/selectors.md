@@ -1,6 +1,6 @@
 # 选轮、资源目录与配置入口
 
-2026-09-13 对照前置 HEAD `49813b2` 与本地工作树。入口在 ClientSystem；进一步按需读 `selection_wheel_control.py`、`selection_wheel_screen.py`、`asset_registry.py`、`asset_selector_screen.py`、`config_book_registry.py`，不要默认都在 utils.py。
+2026-09-16 对照前置 HEAD `a46991e` 与本地工作树。入口在 ClientSystem；进一步按需读 `selection_wheel_control.py`、`selection_wheel_screen.py`、`asset_registry.py`、`asset_selector_screen.py`、`config_book_registry.py`，不要默认都在 utils.py。
 
 ## 公共八槽选轮
 
@@ -11,7 +11,7 @@
 - 控制器 options 包含 center_text、empty_name、empty_icon、empty_tip、allow_empty、initial_index、on_cancel、on_hover。中心取消回调无参数，悬浮回调为 `(item, index)`；允许空槽时选择回调可能收到 None。
 - 可用 SetItems、SetCallback、SetCurrentIndex、GetCurrentIndex、ConfirmSelection 等控制器方法。嵌入式控件的选择不等于关闭宿主；独立屏幕负责自身关闭及数据复用。按源码核对 Update 中的 PollSelection 和关闭流程，不直接操纵内部 wheel 子控件模拟确认。
 
-**工作树扩展**：当前未提交的 selection_wheel_screen.py 增加 branch/children 导航，中心在分支内返回、根级关闭，显式点击才进入分支。`API_RegisterVirtualToolProvider`、`API_OpenVirtualToolProvider`、`API_GetActiveVirtualTool` 也属于当前工作树扩展，依赖尚未跟踪的 virtual_tool_registry.py 与服务端 VirtualToolManager.py。接入这些能力时必须确认整套文件已发布和加载，不能只检查客户端方法存在；实际工具执行仍需服务端校验。普通八槽选择无需依赖这些扩展。
+选轮分支与虚拟工具已进入提交历史：branch/children 提供分支导航，中心在分支内返回、根级关闭，显式点击才进入分支。双端注册、工具状态及服务端校验见 [虚拟工具](virtual-tools.md)。普通八槽选择无需注册工具。当前仍有后续工作树改动，接入时核对实际发布文件。
 
 ## 贴图与音效注册
 
@@ -32,7 +32,7 @@ options 按需要选择：
 - `types` 限制 texture/sound；`mode` 为 select/view。
 - `provider_ids`、`category_ids`、`category_names` 包含筛选；`exclude_provider_ids`、`exclude_category_ids`、`exclude_category_names` 排除筛选。
 - `initial_provider_id` / `initial_category_id` 只负责初始定位、置顶和展开，不会隐藏其他资源。
-- `category_tips` 按分类名称提供提示。
+- `category_tips` 按分类名称提供文本或 `{text: 提示文本, delay_time: 秒数}`，默认延迟 0.5 秒；初始自动选中和手动选中都可触发。
 - `multi_select_enabled`、`multi_select_mode`、`multi_selected_item_ids` 控制多选，初始勾选使用完整资源 ID。
 - `allow_custom_texture_path` 默认 False，仅贴图单选且回调有效时显示；`initial_custom_texture_path` 设置初值。自定义路径回调的后两个 ID 都是空字符串，调用方持久化 resource_path，不能按 ID 解析失败处理。
 
@@ -43,3 +43,5 @@ options 按需要选择：
 监听 `ModSettingRegisterRequest`，使用 `API_RegisterModSettings(provider_id, provider_name, settings)` 发布该模组全部入口，或 `API_RegisterModSetting(provider_id, provider_name, setting_id, setting_name, icon, open_callback, options=None)` 更新单项。open_callback 为无参函数；具体排序、描述和 wheel_enabled 选项查 config_book_registry.py。
 
 用 `API_ResolveModSetting` / `API_OpenRegisteredModSetting` 按 `provider_id:setting_id` 查询或打开；`API_GetConfigBookWheelSlots`、`API_GetConfigBookWheelEntries`、`API_FindConfigBookWheelSlot`、`API_AssignConfigBookWheelSlot` 管理宝典槽位，参数与保存反馈查源码。注册只是发布客户端入口，不能替代服务端业务权限校验，也不要与全局配置持久化 API 混淆。
+
+配置入口现支持字符串 `itemId`，用于资源中心联动，不是 Minecraft 物品名称，也不是资源选择器的 asset_id。按当前注册样例传商城组件 ID；仍须提供可调用的 open_callback，不能用 itemId 替代正常打开入口。

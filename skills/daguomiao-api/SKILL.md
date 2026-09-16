@@ -2,7 +2,7 @@
 name: daguomiao-api
 description: >
   接入或维护 DAGUOMIAO_API_MOD 大果喵前置模组。用于依赖此前置的网易 Minecraft
-  模组复用公共 UI、滑块、选轮、资源选择器、配置入口、分组列表、指令库和跨存档 Provider，
+  模组复用公共 UI、HUD 按钮、选轮、虚拟工具、公告、权限、资源选择器、指令库和跨存档 Provider，
   以及修改前置公共接口时检查调用方兼容性。独立模组的通用开发不必加载。
 ---
 
@@ -12,7 +12,7 @@ description: >
 
 ## 源码定位与边界
 
-公共 UI 说明于 2026-09-13 对照本地 HEAD `49813b2` 及工作树更新；服务端迁移说明仍为 2026-09-05 基线。工作树中的虚拟工具与选轮分支扩展单独标注，不能当作已发布能力；接入时核对实际加载版本。
+于 2026-09-16 对照本地 HEAD `a46991e` 及当前未提交工作树更新。虚拟工具、公告等已有提交；全量跨存档即时应用、分组列表注册调整等仍含工作树变化，不代表发布包已包含。接入时核对实际加载版本，特别是旧版跨存档仍可能采用重进世界后恢复的流程。
 
 当前源码位置：`C:/Users/cat/Desktop/DAGUOMIAO_API_MOD/DAGUOMIAO_API_MOD`。其他机器优先使用用户指定的前置仓库；路径不存在时查找实际源码，不能假定所有环境都有该绝对路径。
 
@@ -40,6 +40,8 @@ description: >
 - 独立数值滑块及 EditBox 联动：读 [references/slider.md](references/slider.md)。
 - 八槽选轮、贴图/音效选择、配置入口注册：读 [references/selectors.md](references/selectors.md)。这些实现已拆到 `selection_wheel_control.py`、`asset_registry.py` 等文件，不只在 `utils.py` 中。
 - 服务端调用、指令接管、配置、跨存档：读 [references/server.md](references/server.md)。
+- 奇异宝典虚拟工具的双端注册：读 [references/virtual-tools.md](references/virtual-tools.md)。
+- 模组更新公告、服务器公告及权限区别：读 [references/announcements.md](references/announcements.md)。
 
 只读取当前能力对应的方法、实现与调用点，不必每次加载完整 `utils.py`。可用 `rg -n 'def API_|def Register|def Open'` 定位，再阅读函数体、返回值和调用样例。引用中列出的 API 名是检索入口，不代表完整签名。
 

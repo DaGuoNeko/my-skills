@@ -22,6 +22,9 @@
 | 模组配置入口 | `API_RegisterModSettings` / `API_RegisterModSetting` | 注册到奇异宝典；不是服务端 GlobalConfig |
 | 效果目录 | `ContAllEffectCusBoxList` | 标准 Effect 与自定义 Buff 合并；配合 CusBox 效果模式 |
 | 键盘按键目录 | `API_GetKeyboardKeyOptions` / `API_GetKeyboardKeyName` / `API_GetKeyboardKeyCode` / `API_GetKeyboardKeyMap` | 从公共入口取得名称与键码，具体筛选参数查源码 |
+| 可移动 HUD 按钮 | `API_RegisterMovableHudButtons` / `API_GetMovableHudButtons` | 保存句柄，销毁时 Destroy |
+| 叠加界面背景模糊 | `API_AcquireScreenBlur` / `API_ReleaseScreenBlur` | 按 ScreenNode 成对申请和释放 |
+| 更新及服务器公告 | 公告注册与打开 API | 见 [公告接入](announcements.md) |
 
 ## 注册与资源
 
@@ -35,14 +38,14 @@ PushScreen 的动态绑定在 `ScreenNode.Create()` 阶段注册。不要在第�
 
 部分注册方法支持 `dynamic_create=False`，只绑定 JsonUI 预置控件；不要把“弹窗必须动态创建”作为普遍要求。应逐个确认目标方法签名、控件名称与层级，不能把该参数传给所有方法。注册失败返回 `None` 时处理失败，避免后续调用空控制器。
 
-注册返回值并不统一：例如 `RegisterTipsPanel` 返回 bool，不是控制器。`ShowTipsPanel` 在原版 `hud_screen` 为顶层时自动使用全局 HUD 提示，HUD 重建后可重新挂载；其他界面继续走注册面板。`isdisp=True` 延迟 0.5 秒显示，真正显示时由前置播放统一提示音。不要再复制旧的“只查 GetTopUINode 上 __TipsPanel__”实现。
+注册返回值并不统一：例如 `RegisterTipsPanel` 返回 bool，不是控制器。`ShowTipsPanel(text, isdisp=False, delay_time=0.5)` 在原版 `hud_screen` 为顶层时自动使用全局 HUD 提示，HUD 重建后可重新挂载；其他界面继续走注册面板。isdisp=True 时按 delay_time 秒延迟，默认 0.5，零延迟立即显示；真正显示时播放统一提示音。不要再复制旧的“只查 GetTopUINode 上 __TipsPanel__”实现。
 
 ## 分组列表
 
 - `API_RegisterGroupedList(ui_node, create_path, item_callback=None, options=None)` 的可选配置使用 options 字典。查 `GroupedCollapseList.NormalizeOptions` 与类内默认值，避免猜字段。
 - 默认实例使用 `M_GROUPED_LIST`；自定义实例参考公共 JSON 的 `M_GROUPED_LIST_INSTANCE`。JsonUI 的 `$M_GROUPED_LIST_ID` 与 Python `options['list_id']` 一致，每屏唯一，仅使用英文字母、数字、下划线。
 - 查 `utils.py` 的多实例用例确认实际挂载层级，不能把实例包装层误作内部列表路径。
-- 自定义 list_id 按 `utils.py` 用例在 RegisterUI/PushScreen 或 CreateUI 创建 ScreenNode 前调用 `API_PrepareGroupedListScreen(screen_class, list_ids)`，随后在 `Create()` 注册控制器；默认实例不需要 Prepare。该准备接口没有创建控制器或填充数据。
+- 当前工作树要求在 **RegisterUI 之前** 调用 `API_PrepareGroupedListScreen(screen_class, list_ids)`，PushScreen 和 CreateUI/HUD 均适用，默认实例也传 `['DEFAULT']`，多实例一次传全部 ID。随后在 `Create()` 注册运行时控制器；create_path 是 M_GROUPED_LIST 的直接父级。旧文档“默认实例无需 Prepare”不再作为当前接入约定。
 - `SetData()` 深拷贝输入；仅修改外部 dict 不会自动刷新。数据格式、字段映射和点击回调以 `SetData` 及源码用例为准。
 - 多列表同帧填充可用 `API_BeginGroupedListBatch(ui_node)` 与 `API_EndGroupedListBatch(ui_node, refresh=True)` 合并刷新，用 `try/finally` 配对结束。按需延迟页面内容初始化时仍保证动态绑定及时注册。
 
@@ -56,7 +59,15 @@ PushScreen 的动态绑定在 `ScreenNode.Create()` 阶段注册。不要在第�
 
 实体数据通过 `ContAllEntityCusBoxList(callback)` 获取并交给已注册的公共选择框；检查异步回复时界面是否仍有效，使用前置缓存而非每次开框重新遍历。
 
-## 迁移已有界面
+## 可移动 HUD 与模糊生命周期
+
+`API_RegisterMovableHudButtons(ui_node, group_id, button_configs, options=None)` 返回句柄或 None；同 ui_node/group_id 重复注册复用句柄。每个按钮 panel 继承 `M_MOVABLE_HUD_BUTTON`，`$M_MOVABLE_HUD_ID` 与配置 id 一致，同屏避免重复。panel_path 指向该 panel，内部必须有 move_button。
+
+button_configs 支持 id、panel_path、click_callback、visible_callback、key_mapping_name、key_text、safe_parent_path、safe_margin、legacy_button_paths；options 支持公共 safe_parent_path、safe_margin、move_data_key_name。具体回调参数查 utils.py 的 MovableHudButtons。迁移旧拖动按钮时核对 legacy_button_paths 与旧位置存储键，不随意丢弃玩家布局。在宿主 Destroy 中调用句柄 Destroy() 清理监听与拖动管理器。
+
+`API_AcquireScreenBlur(screen_node, radius=1.0)` 按实例持有模糊，同实例重复申请不累加；radius 限制为 0–10，多屏取最大值。退出时调用 `API_ReleaseScreenBlur(screen_node)`，最后一个持有者释放才关闭。不要在子弹窗退出时直接 SetScreenBlur(False)，否则会影响仍打开的父屏。
+
+## 迁移检查
 
 先记录“旧功能 → 旧路径/绑定 → 新控件 → 回调 → 保存字段”，保留原有清空、取消、默认值和权限行为。不能仅按新控件名字推断功能；语义或功能缺口无法由源码确定时询问用户。
 
