@@ -9,7 +9,7 @@
 | 通用选项面板 | `API_RegisterCusBoxPanel` / `API_OpenCusBoxPanel` | 在 `ScreenNode.Create()` 注册，点击时打开 |
 | 旧按钮选择框 | `ResiCusBoxUi` | 保留 boxpath 和 mode 两种调用；二者都有时 boxpath 优先 |
 | 一级折叠分组列表 | `API_RegisterGroupedList` / `API_GetGroupedList` | 多实例使用唯一 list_id |
-| 确认弹窗 | `ResiPopup` / `OpenPopup` | 后者通过当前顶层 Screen 找控制器 |
+| 确认弹窗 | `ResiPopup` / `OpenPopup` | 后者通过当前顶层 Screen 找控制器；当前弹窗支持 Toggle/Edit 扩展 |
 | 数量、颜色 | `RegisterContPanel` / `OpenContPanel`、`RegisterColorPicker` / `OpenColorPicker` | 先注册再打开，查返回控制器是否有效 |
 | 物品选择或预览 | `RegisterItemPicker` / `OpenItemPicker` | 核对清空、NBT 和返还背包的语义 |
 | 提示与物品提示 | `RegisterTipsPanel` / `ShowTipsPanel`、`RegisterItemsTipsPanel` / `ShowItemsTipsPanel` | 复用已有提示与 RPG 联动逻辑 |
@@ -48,6 +48,20 @@ PushScreen 的动态绑定在 `ScreenNode.Create()` 阶段注册。不要在第�
 - 当前工作树要求在 **RegisterUI 之前** 调用 `API_PrepareGroupedListScreen(screen_class, list_ids)`，PushScreen 和 CreateUI/HUD 均适用，默认实例也传 `['DEFAULT']`，多实例一次传全部 ID。随后在 `Create()` 注册运行时控制器；create_path 是 M_GROUPED_LIST 的直接父级。旧文档“默认实例无需 Prepare”不再作为当前接入约定。
 - `SetData()` 深拷贝输入；仅修改外部 dict 不会自动刷新。数据格式、字段映射和点击回调以 `SetData` 及源码用例为准。
 - 多列表同帧填充可用 `API_BeginGroupedListBatch(ui_node)` 与 `API_EndGroupedListBatch(ui_node, refresh=True)` 合并刷新，用 `try/finally` 配对结束。按需延迟页面内容初始化时仍保证动态绑定及时注册。
+
+`GroupedCollapseList` 的 `options['category_navigation_mode']=True` 会进入分类导航模式：只展示分类行，选中分类后由宿主切换外部内容；该模式下不应按普通展开列表处理分页和项目行。`category_manager_enabled`、`group_select_callback`、`always_show_ungrouped` 等选项也要按当前源码默认值核对。
+
+公共 `M_scroll_view` 支持覆盖滚动条的 `$scroll_track_image_color`、`$scroll_track_image_size`、`$scroll_track_image_alpha` 和 `$scroll_track_texture`。这些是 JsonUI 变量，按实例在继承/创建处覆盖，不能把它们当 Python 控制器属性；先确认实际控件层级再改。
+
+## 弹窗扩展
+
+`ResiPopup`/`OpenPopup` 的 `Popup(text, callback=None, title='提醒', options=None)` 可通过 `options` 启用扩展控件：
+
+- `toggle`: `True` 或字典；字典支持 `title`、`value`、`on_changed`，确认结果返回 `{'toggle': bool}`。
+- `edit`: `True` 或字典；字典支持 `title`、`value`、`on_changed`，确认结果返回 `{'edit': text}`。
+- `on_confirm(result)` 接收扩展结果；`validate_result(result)` 返回假值时保留弹窗并允许修改后重试。
+
+未启用扩展时结果为空字典；旧的 `callback()` 仍按原语义执行。取消不会触发确认回调，并会清理本次 Toggle/Edit 状态。动态弹窗仍需确认目标路径下存在 `M_Popup`，静态预置控件可传 `dynamic_create=False`。
 
 ## 物品与实体
 

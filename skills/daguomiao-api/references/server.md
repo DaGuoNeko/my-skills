@@ -2,7 +2,7 @@
 
 下列方法来自前置 ServerSystem，客户端入口会单独标注。阅读实际源码确认完整签名，不把名称存在等同于调用成功。
 
-跨存档部分于 2026-09-16 按当前工作树更新。新增或修改 Provider 前先读前置根目录 `CROSS_SAVE_GUIDE.md`（当前未跟踪文件），再核对 CrossSaveManager.py；指南不存在时从实现确认，不能套用旧的延迟全量恢复流程。
+跨存档部分于 2026-09-20 按前置 HEAD `33a2c09` 更新。新增或修改 Provider 前先读前置根目录 `CROSS_SAVE_GUIDE.md`，再核对 CrossSaveManager.py；指南不存在时从实现确认，不能套用旧的延迟全量恢复流程。
 
 ## 请求与权限
 
@@ -34,6 +34,8 @@
 | 用户明确需要整个世界 ExtraData 迁移 | 核对内置整体 Provider；普通业务接入不默认使用全量恢复 |
 
 简易 Provider 的 `descriptor['datasets']` 是数据集列表，每项具有 `id` 与非空 `keys` 列表；其他描述字段查 `_NormalizeProviderDescriptor`。键不能重复分配或占用内部保留键，注册返回 `(ok, msg)` 必须检查。可选回调为 `validate_import`、`after_import`、`after_whole_import`、`after_export`，签名与时机查 `ExtraDataCrossSaveProvider`，不要假定注册后自动同步业务缓存。
+
+`descriptor['dependencies']` 是强制捆绑依赖。前置会在导出选择时自动补齐依赖及其全部数据集，客户端锁定依赖项的取消操作，服务端再次校验并按依赖拓扑排序导出/导入；目标缺失依赖时依赖链会一起跳过。当前内置约定包括 `custom_attr -> customeconomy`、`quest_engine -> customlootcore`，业务 Provider 仍需声明自己的依赖。
 
 高级 Provider 至少实现 `export_dataset(dataset_id, context)` 和 `apply_dataset(dataset_id, value, context)`。按需实现校验、commit、rollback_dataset 等回调；`validate_provider` 可对全部 datasets 做关联校验。事务备份、应用、失败回滚与缓存恢复需要一起设计，不能只描述成功写入。
 

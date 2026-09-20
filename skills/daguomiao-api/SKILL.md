@@ -12,7 +12,7 @@ description: >
 
 ## 源码定位与边界
 
-于 2026-09-16 对照本地 HEAD `a46991e` 及当前未提交工作树更新。虚拟工具、公告等已有提交；全量跨存档即时应用、分组列表注册调整等仍含工作树变化，不代表发布包已包含。接入时核对实际加载版本，特别是旧版跨存档仍可能采用重进世界后恢复的流程。
+于 2026-09-20 对照本地 HEAD `33a2c09` 更新；相较技能原基线 `a46991e`，前置已加入公共弹窗 Toggle/Edit 扩展、分组列表分类导航与滚动条主题参数、跨存档 Provider 依赖捆绑及全量 ExtraData 即时应用等变化。当前工作树仍有 `DAGUOMIAO_API_MODR/ui/customnpc/customNPCUI.json` 未提交改动，分析技能时不要覆盖它；接入时仍核对实际加载版本。
 
 当前源码位置：`C:/Users/cat/Desktop/DAGUOMIAO_API_MOD/DAGUOMIAO_API_MOD`。其他机器优先使用用户指定的前置仓库；路径不存在时查找实际源码，不能假定所有环境都有该绝对路径。
 
@@ -36,7 +36,7 @@ description: >
 
 ## 按任务读取
 
-- 公共面板、列表、物品/实体选择、UI 迁移：读 [references/ui.md](references/ui.md)。JsonUI 语法与视觉规范可结合技能库中的 `jsonui`、`modui`；公共 API 参数以实际源码为准。
+- 公共面板、列表、物品/实体选择、UI 迁移：读 [references/ui.md](references/ui.md)。其中弹窗 `options`、分类导航和滚动条主题属于当前公共控件约定。JsonUI 语法与视觉规范可结合技能库中的 `jsonui`、`modui`；公共 API 参数以实际源码为准。
 - 独立数值滑块及 EditBox 联动：读 [references/slider.md](references/slider.md)。
 - 八槽选轮、贴图/音效选择、配置入口注册：读 [references/selectors.md](references/selectors.md)。这些实现已拆到 `selection_wheel_control.py`、`asset_registry.py` 等文件，不只在 `utils.py` 中。
 - 服务端调用、指令接管、配置、跨存档：读 [references/server.md](references/server.md)。
