@@ -33,6 +33,13 @@ description: >
 - 房主：`state: game_ready` 才算可操作。
 - 来宾：`autoJoin.phase: joined` 才算入房成功；`waiting_assertion` 是断言弹窗等用户关；`needs_attention` 要用户手动处理，**不要换 requestId 重开**。
 
+等待时间（实测）：房主和来宾各约 30 秒；同时开的游戏越多越慢。第一次查询放在启动后约 30 秒，之后每 20~30 秒查一次，不要连续空查。
+
+来宾 `phase: failed` 且 `state: ended`（客户端已自动关闭）时：
+1. 先 `client_logs` 看失败原因。常见的是「原生游戏菜单未就绪」，多开、机器负载高时菜单 20 秒内没加载出来。
+2. 偶发原因用**新的 requestId**（上一次已结束，不算同一次启动）、相同 playerName 和 hostSessionId 重开一次。
+3. 再失败就停下，把日志原因告诉用户，不要反复重开。
+
 规则：
 - **同一次启动的重试必须复用原 requestId**，超时也不换。
 - 同一个存档禁止重复启动。
@@ -49,7 +56,7 @@ description: >
 | UI 树、截图、键鼠、性能、只看报错 | 先 `list_client_mcdk_tools` 看该客户端支持什么，再 `call_client_mcdk_tool(name, arguments)` |
 
 `call_client_mcdk_tool` 常用工具：
-- `jsonui_debugger`：`{"cmd": "/screens"}` 列屏幕，`/tree <screen> <path> --depth=3` 看树，`/node ... --fields=text` 看属性，`/reload-ui` 只重载 UI JSON（约 2 秒，改 JSON 优先用它，不重启）。
+- `jsonui_debugger`：`{"cmd": "/screens"}` 列屏幕（只有 HUD 时返回空列表，属正常），`/tree <screen> <path> --depth=3` 看树，`/node ... --fields=text` 看属性，`/reload-ui` 只重载 UI JSON（约 2 秒，改 JSON 优先用它，不重启）。
 - `get_latest_error_logs`：只看报错。
 - `capture_game_window`：截图，**只在必须看画面时用**，优先日志和 UI 树。
 - `mc_input`：键鼠输入，先 `{"op": "/help"}`、`/state`；坐标是 0~1 百分比；返回成功只代表已发送，要用截图或日志确认效果。
@@ -68,7 +75,7 @@ _result = c.GetEngineCompFactory().CreatePos(c.GetLocalPlayerId()).GetFootPos()
 - 每个会话第一次用前必须先调 `get_doc`，否则 `execute_script` 会被拒绝。
 - `execute_script` 跑 Python 2.7：不含 `yield` 是同步查询，用 `print` 输出；含 `yield` 是协程，最后一行调用生成器函数。
 - 指令用 `yield run_commands([...])` 一次批量发，基岩版语法，不能带 Java 版 NBT。
-- **限制：modpc 固定连本机 14520 端口，只能控制一个游戏。** 同时开了多个客户端时，先用工具箱 `execute_client_code` 读坐标，和 modpc 的 `get_position()` 对照，确认连的是目标客户端再操作。
+- **限制：modpc 固定连本机 14520 端口，只能控制一个游戏。** 实测多开时它连的是**最先启动的房主**，后开的房主和来宾都控制不了。同时开了多个客户端时，先用工具箱 `execute_client_code` 读坐标，和 modpc 的 `get_position()` 对照，确认连的是目标客户端再操作；对不上就改用工具箱的 `execute_client_code` 或 `mc_input` 操作目标客户端。
 
 ## 5. 收尾和安全
 
