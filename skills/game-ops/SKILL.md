@@ -52,8 +52,16 @@ description: >
 |---|---|
 | 执行 Python 2.7 代码 | `execute_client_code(side: client / server)`，最后一个表达式或 `_result` 作为返回值 |
 | 看日志 | `client_logs(sessionId, limit)`，用 `afterId` 增量读 |
-| 热重载 | `reload_client(action)`：`scripts` 改了 Python；`world` / `addons` 需 `confirmed: true`（改了 JSON、贴图、音效等资源用 `addons`） |
+| 重载 | `reload_client(action)`：`scripts` 只热更新 Python；`world` / `addons` 需 `confirmed: true`，`addons` 连资源一起刷新。按下方「重载策略」选 |
 | UI 树、截图、键鼠、性能、只看报错 | 先 `list_client_mcdk_tools` 看该客户端支持什么，再 `call_client_mcdk_tool(name, arguments)` |
+
+重载策略（用户偏好：默认重载游戏，更安全）：
+- **默认**：改完代码用 `reload_client(action: addons, confirmed: true)` 重载游戏，脚本、资源和初始化流程都重新走一遍。
+- **只有小代码才热更新**：只改了函数内部几行逻辑，且没碰注册、事件监听、`__init__`、模块级变量、存档读写时，才用 `scripts` 热更新。拿不准就按默认重载。
+- **只改 UI JSON**：可以用 `jsonui_debugger` 的 `/reload-ui`；涉及 Python 绑定一起改时按默认重载。
+- **新增/删除模组、改 manifest 或启动配置的模组列表**：`reload_client` 会拒绝，请用户在工具箱保存后重启。
+- 多开时源码目录共用（看 `sharedSources`），重载前确认要刷新的是哪些客户端，逐个重载。
+- 重载后重新 `list_clients` 拿新 `generation`，再看日志和执行代码确认改动生效。
 
 `call_client_mcdk_tool` 常用工具：
 - `jsonui_debugger`：`{"cmd": "/screens"}` 列屏幕（只有 HUD 时返回空列表，属正常），`/tree <screen> <path> --depth=3` 看树，`/node ... --fields=text` 看属性，`/reload-ui` 只重载 UI JSON（约 2 秒，改 JSON 优先用它，不重启）。
@@ -79,7 +87,7 @@ _result = c.GetEngineCompFactory().CreatePos(c.GetLocalPlayerId()).GetFootPos()
 
 ## 5. 收尾和安全
 
-- 关客户端前先保存游戏，再 `close_client(sessionId, confirmed: true)`；它只关指定客户端。
+- 关客户端：直接 `close_client(sessionId, confirmed: true)`，不用先手动保存游戏（用户偏好）；它只关指定客户端。多开时先关来宾再关房主，关完 `list_clients` 确认 `running: false`。
 - 已结束的客户端可用 `remove_client` 从列表移除（保留日志和存档）。
 - **执行代码、重载、输入超时 = 结果未知，禁止自动重试**，先看日志确认状态。
 - 多客户端共享桌面焦点：`mc_input` 和 modpc 的动作一次只对一个客户端串行进行。
