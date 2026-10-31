@@ -116,12 +116,15 @@ description: >
 
 ### 运行环境
 
-- 项目 Mod 脚本运行于 **Python 2.7**（禁止 f-string、类型标注、`print()` 函数、`async/await`）
+- 项目 Mod 脚本运行于 **Python 2.7**（禁止 f-string、类型标注、`print()` 函数、`async/await`），字符串格式化用 `%` 或 `.format()`
+- 文件顶部写 `# -*- coding: utf-8 -*-`；import 放文件顶部，不在函数内 import
 - 此类项目的配套命令行工具通常使用 Python 3.10+，仍以工具实际声明和当前环境为准，不套用游戏脚本语法限制
-- 使用 `:type:` 注释字符串提供 IDE 类型提示：
+- 使用 `:type:` 注释字符串提供 IDE 类型提示，写在赋值语句的紧下一行；`getattr` 等可能为空的返回值标 `| None`：
   ```python
   self.AnyEvent = AE.AnyEvent(self)
   """:type: re0Scripts.re0ServerSystem.AnyEvent.AnyEvent"""
+  popup = getattr(uinode, '__PopupClass__', None)
+  """:type: re0Scripts.re0ClientSystem.utils.Popup | None"""
   ```
 
 ### 文本与编码

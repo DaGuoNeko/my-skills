@@ -47,18 +47,9 @@ description: >
 | 4 | **真实资源路径** | 查实际贴图和 namespace；允许引用已声明依赖的前置资源，避免复制整套公共贴图或猜路径 |
 | 5 | **`common.base_screen` 默认 `is_showing_menu: true`** | `PushScreen` 打开的业务界面需要 `is_showing_menu: true`。网易 `common.base_screen` 已内置该默认值，因此 `main@common.base_screen` 只写 `$screen_content` 即可，无需显式覆盖。若继承自其他基类则需手动传 `$is_showing_menu: true` |
 
-### Python 2.7 约束（全适用）
+### Python 写法
 
-- 禁止 f-string、type hints、async/await
-- 字符串格式化用 `.format()` 或 `%`
-- 文件顶部写 `# -*- coding: utf-8 -*-`
-- 可用 `print` 语句或 `from __future__ import print_function`
-- 禁止函数内 import；import 放文件顶部
-- 用 `:type:` 注释字符串提供 IDE 类型提示：
-  ```python
-  self.cs = param["cs"]
-  """:type: clientApi.GetClientSystemCls()"""
-  ```
+遵循 dev 技能「网易 Minecraft Mod 专用约定」中的 Python 2.7、编码和 `:type:` 注释规则。
 
 ---
 
@@ -196,6 +187,8 @@ description: >
 ## 五、公共组件库规范
 
 namespace 固定为 `<modname>_common`。所有 `M_` 组件用 `$` 变量参数化，便于各 screen 注入不同的绑定名。
+
+本章是常用组件的设计约定；全部组件清单、参数与 Python 侧工具类见 [公共组件速查](references/common-library.md)。
 
 ### 5.1 按钮 `newbutt2`
 
@@ -532,14 +525,9 @@ type `custom`，`renderer: background_renderer`，`layer: 1`。渲染游戏模�
 
 ## 六、数据绑定规范
 
-### 6.1 绑定类型 4 类
+### 6.1 绑定类型
 
-| 类型 | 用途 | Python 装饰器 |
-|------|------|--------------|
-| `global` | 屏幕级单值绑定（标题/权限/总数等） | `@ViewBinder.binding(BF_BindString, '#name')` |
-| `collection` | grid 行级逐行绑定（必带 `binding_collection_name`） | `@ViewBinder.binding_collection(BF_BindString, 'coll_name', '#name')` |
-| `collection_details` | **grid 内按钮点击**：告知引擎该按钮属于某个 collection，点击时 `args` 携带 `#collection_index` 和 `button_scene_name`。**JSON 端必须加 `bindings` 数组**（否则按钮不响应），Python 端**必须用普通 `binding` 装饰器**（❌ 禁止用 `binding_collection`，否则回调收不到 index） | `@ViewBinder.binding(BF_ButtonClickUp, '#my_btn')`, index 从 `args['#collection_index']` 或 `args['button_scene_name']` 取 |
-| `view` | 控件间派生绑定（source→target，表达式计算） | 无 Python 端，纯 JSON `property_bag` + expression |
+`global` / `collection` / `collection_details` / `view` 四类绑定的语法、装饰器和 grid 内按钮取 index 的写法统一见 jsonui 技能 `references/guide.md` 第十三章与 16.1。本章只规定命名和写法约定。
 
 ### 6.2 绑定名命名后缀约定（强制）
 
@@ -810,28 +798,9 @@ class MyScreen(ScreenNode):
 
 **节流模式**：`_ui_dirty` 标记 + `Update()` 检查，多个状态变更合并为一次刷新。用 `_MarkUIUpdate()` 设标记。
 
-### 8.2 ViewBinder 装饰器全表
+### 8.2 ViewBinder 装饰器
 
-| 装饰器 | 用途 | 示例 |
-|--------|------|------|
-| `BF_ButtonClickUp` | 按钮点击 | `@ViewBinder.binding(ViewBinder.BF_ButtonClickUp, '#close_btn')` |
-| `BF_BindBool` | 布尔绑定（可见性/状态） | `@ViewBinder.binding(ViewBinder.BF_BindBool, '#wh_is_op')` |
-| `BF_BindString` | 字符串绑定 | `@ViewBinder.binding(ViewBinder.BF_BindString, '#wh_title')` |
-| `BF_BindInt` | 整数绑定 | `@ViewBinder.binding(ViewBinder.BF_BindInt, '#wh_list_count')` |
-| `BF_BindFloat` | 浮点绑定 | `@ViewBinder.binding(ViewBinder.BF_BindFloat, '#slider_value')` |
-| `BF_BindColor` | 颜色绑定 RGBA | `@ViewBinder.binding(ViewBinder.BF_BindColor, '#item_color')` |
-| `BF_ToggleChanged \| ToggleFilter` | Toggle 变更 | `@ViewBinder.binding(ViewBinder.ToggleFilter \| ViewBinder.BF_ToggleChanged, '#mode_toggle_jh')` |
-| `BF_EditChanged \| BF_EditFinished` | EditBox 变更 | `@ViewBinder.binding(ViewBinder.BF_EditChanged \| ViewBinder.BF_EditFinished, '#search_edit_jh')` |
-| `BF_SliderChanged \| BF_SliderFinished` | Slider 变更 | `@ViewBinder.binding(ViewBinder.BF_SliderChanged \| ViewBinder.BF_SliderFinished, '#count_slider_jh')` |
-| `binding_collection(flag, coll, '#name')` | 行级集合绑定 | `@ViewBinder.binding_collection(ViewBinder.BF_BindString, 'wh_list', '#wh_item_name')` |
-
-集合绑定的回调签名：
-```python
-@ViewBinder.binding_collection(ViewBinder.BF_BindString, 'wh_list', '#wh_item_name')
-def wh_item_name(self, index):
-    """:type: int"""
-    return self._data[index]['name']
-```
+`BF_*` 常量、组合写法（如 `ToggleFilter | BF_ToggleChanged`、`BF_EditChanged | BF_EditFinished`）和集合绑定回调签名见 jsonui 技能 `references/guide.md` 第七、十三章及 16.15。绑定名按 6.2 的后缀约定命名。
 
 ### 8.3 ClientSystem 装配
 

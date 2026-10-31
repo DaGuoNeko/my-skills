@@ -4,7 +4,7 @@ cc_switch_update_marker: 2026-08-06-b
 description: >
   网易 Minecraft MOD 脚手架生成器：通过模板克隆生成行为包+资源包+脚本框架。
   当用户提到生成 MOD、创建模组、脚手架、模板、custom_warehouse、占位符替换、
-  一键生成 等关键词时触发。覆盖目录结构、占位符规则、贴图路径规范、Python 2.7 注释规范。
+  一键生成 等关键词时触发。覆盖目录结构、占位符规则、贴图路径规范。
 ---
 
 # MOD 脚手架生成器规范
@@ -69,17 +69,9 @@ description: >
 
 ---
 
-## Python 2.7 类型注释
+## Python 写法
 
-```python
-# 实例变量 — 写在赋值语句的紧下一行
-self.AnyEvent = AE.AnyEvent(self)
-""":type: custom_warehouseScripts.custom_warehouseServerSystem.AnyEvent.AnyEvent"""
-
-# getattr 返回值
-__PopupClass__ = getattr(uinode, '__PopupClass__', None)
-""":type: custom_warehouseScripts.custom_warehouseClientSystem.utils.Popup | None"""
-```
+遵循 dev 技能「网易 Minecraft Mod 专用约定」中的 Python 2.7 与 `:type:` 注释规则；模板里的类型路径用生成后的模组名（如 `custom_warehouseScripts...`）。
 
 ---
 
