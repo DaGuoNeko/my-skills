@@ -27,13 +27,18 @@ description: >
 |---|---|
 | 进某个存档测试 | `list_worlds` 找 `worldId`（用户只说名字时按 `name` 匹配，重名就问）→ `launch_world(instanceId, requestId, worldId)` |
 | 本地多人测试 | 先有房主（复用或 `launch_world`）→ `launch_joined_client(instanceId, requestId, playerName, hostSessionId)`，每个来宾一个**不同的 playerName** 和**新的 requestId** |
-| 只停在主菜单 | `launch_client(mode: blank / debug / profile)`，profile 模式配合 `list_launch_profiles` 的 `profileId` |
+| 只停在主菜单 | `launch_client(mode: blank / debug / profile)`，profile 模式配合 `list_projects`（旧版叫 `list_launch_profiles`）的配置 ID |
+| 要一份干净副本再测（会改坏存档的测试） | `clone_world(instanceId, requestId, worldId, name, confirmed: true)`，只能复制已停止的存档，模组源码不复制 |
+| 导入外部存档 | 先 `inspect_world_source(source)` 只读检查，再 `import_world(..., mode: copy, confirmed: true)`；`linked` 会直接用原目录，用户明确要才用 |
+| 改了贴图、JSON 资源后启动前自查 | `validate_world_assets(worldId)`：扫描坏 PNG、空资源路径和引用，不启动、不改文件 |
 
-启动后轮询 `list_clients`，等到：
-- 房主：`state: game_ready` 才算可操作。
-- 来宾：`autoJoin.phase: joined` 才算入房成功；`waiting_assertion` 是断言弹窗等用户关；`needs_attention` 要用户手动处理，**不要换 requestId 重开**。
+启动后等就绪：
+- **优先 `wait_client_ready(sessionId, generation, timeoutMs: 60000)`**：在期限内等到可执行世界状态再返回，不会重启或重载。超时就再调一次，最多等 2~3 轮；不清楚卡在哪用 `client_readiness` 看分层状态。
+- 房主：就绪（`state: game_ready`）才算可操作。
+- 来宾：还要 `list_clients` 看 `autoJoin.phase: joined` 才算入房成功；`needs_attention` 要用户手动处理，**不要换 requestId 重开**。
+- `waiting_assertion`（引擎断言弹窗）：`list_client_assertions` 读弹窗内容报给用户；用户同意后才 `resolve_client_assertion(action: ignore, confirmed: true)` 忽略，一次一个。忽略不等于问题修好了，之后看日志。
 
-等待时间（实测）：房主和来宾各约 30 秒；同时开的游戏越多越慢。第一次查询放在启动后约 30 秒，之后每 20~30 秒查一次，不要连续空查。
+等待时间（实测）：房主和来宾各约 30 秒；同时开的游戏越多越慢。
 
 来宾 `phase: failed` 且 `state: ended`（客户端已自动关闭）时：
 1. 先 `client_logs` 看失败原因。常见的是「原生游戏菜单未就绪」，多开、机器负载高时菜单 20 秒内没加载出来。
@@ -66,7 +71,7 @@ description: >
 `call_client_mcdk_tool` 常用工具：
 - `jsonui_debugger`：`{"cmd": "/screens"}` 列屏幕（只有 HUD 时返回空列表，属正常），`/tree <screen> <path> --depth=3` 看树，`/node ... --fields=text` 看属性，`/reload-ui` 只重载 UI JSON（约 2 秒，改 JSON 优先用它，不重启）。
 - `get_latest_error_logs`：只看报错。
-- `capture_game_window`：截图，**只在必须看画面时用**，优先日志和 UI 树。
+- 截图**只在必须看画面时用**，优先日志和 UI 树。首选工具箱的 `capture_client_window(sessionId, generation)`：窗口被挡住也能截、不抢焦点、原始分辨率 PNG；MCDK 的 `capture_game_window` 是 480p 备用。要固定位置/角度/时间/天气拍图用 `capture_scene`（会暂停昼夜和天气，需 `confirmed: true`）。
 - `mc_input`：键鼠输入，先 `{"op": "/help"}`、`/state`；坐标是 0~1 百分比；返回成功只代表已发送，要用截图或日志确认效果。
 - `mc_profiler`：Python/原生性能分析，先 `/help`。按函数的 CPU 热点也可用 `mcdk-mcp-tracy`（`tracy_status` → `tracy_native_capture` → `tracy_get_function_costs`）。
 
@@ -91,7 +96,7 @@ _result = c.GetEngineCompFactory().CreatePos(c.GetLocalPlayerId()).GetFootPos()
 - 已结束的客户端可用 `remove_client` 从列表移除（保留日志和存档）。
 - **执行代码、重载、输入超时 = 结果未知，禁止自动重试**，先看日志确认状态。
 - 多客户端共享桌面焦点：`mc_input` 和 modpc 的动作一次只对一个客户端串行进行。
-- 不要删存档、不要改启动配置模板；需要按新模组列表启动时，让用户在工具箱里保存后重启。
+- 不要删存档。启动配置（`update_project`）、游戏设置（`update_game_options`）、工具箱设置（`update_settings`）只在用户明确要求时改，改前先 `read_project` / `read_game_options` / `read_settings` 拿 `revision`；它们不影响已运行的游戏，改完要重启对应客户端才生效。
 
 ## 6. 验收
 
