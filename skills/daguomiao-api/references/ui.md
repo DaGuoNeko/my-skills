@@ -1,6 +1,6 @@
 # 公共 UI 接入
 
-源码定位见上级 SKILL.md。下列客户端方法均在前置 ClientSystem 中；具体回调和 options 继续查对应函数及 `utils.py` 实现。
+源码定位见上级 SKILL.md。视觉风格、公共控件参数和贴图见 [ui-style.md](ui-style.md)。下列客户端方法均在前置 ClientSystem 中；具体回调和 options 继续查对应函数及 `utils.py` 实现。
 
 ## 能力选择
 

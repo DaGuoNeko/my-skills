@@ -36,7 +36,8 @@ description: >
 
 ## 按任务读取
 
-- 公共面板、列表、物品/实体选择、UI 迁移：读 [references/ui.md](references/ui.md)。其中弹窗 `options`、分类导航和滚动条主题属于当前公共控件约定。JsonUI 语法与视觉规范可结合技能库中的 `jsonui`、`modui`；公共 API 参数以实际源码为准。
+- 公共面板、列表、物品/实体选择、UI 迁移：读 [references/ui.md](references/ui.md)。其中弹窗 `options`、分类导航和滚动条主题属于当前公共控件约定。JsonUI 语法看 `jsonui`，工程约定看 `modui`；公共 API 参数以实际源码为准。
+- 做界面、对齐前置视觉风格、查公共控件参数和贴图：读 [references/ui-style.md](references/ui-style.md)，用 `scripts/ui_catalog.py` 读前置当前源码。
 - 独立数值滑块及 EditBox 联动：读 [references/slider.md](references/slider.md)。
 - 八槽选轮、贴图/音效选择、配置入口注册：读 [references/selectors.md](references/selectors.md)。这些实现已拆到 `selection_wheel_control.py`、`asset_registry.py` 等文件，不只在 `utils.py` 中。
 - 服务端调用、指令接管、配置、跨存档：读 [references/server.md](references/server.md)。

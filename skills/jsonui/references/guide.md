@@ -1186,7 +1186,7 @@ ctrl.SetAnimEndCallback(on_anim_end)
 
 ## 十五、公共 UI 组件库
 
-公共组件（`ModName_common` / `{模组名}_common`）的速查与使用原则统一放在 modui 技能：[modui/references/common-library.md](../../modui/references/common-library.md)。依赖 `DAGUOMIAO_API_MOD` 的项目先看前置 UI 参考。
+本手册不收录公共组件参数。依赖 `DAGUOMIAO_API_MOD` 的项目按 [UI 风格对齐前置](../../daguomiao-api/references/ui-style.md) 用脚本查前置当前组件；老项目读其 `{模组名}_common.json` 源码。
 
 ---
 

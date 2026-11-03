@@ -19,7 +19,7 @@ description: >
   - 需要数据绑定详细语法（ViewBinder、collection、binding_type）
   - 需要动画系统用法
   - 遇到 UI 报错需要排查
-- 公共组件库（ModName_common）用法与设计规范：读 modui 技能及其 [公共组件速查](../modui/references/common-library.md)
+- 公共组件和视觉风格：看 modui 技能开头的「规范优先级」；依赖前置时按 [UI 风格对齐前置](../daguomiao-api/references/ui-style.md) 查前置当前组件
 
 ---
 
@@ -83,7 +83,7 @@ description: >
 
 ## 一句话记住
 
-- 创建 UI 前先按 modui 技能查公共组件库有没有现成的
-- 贴图路径用 `($Miao_ModUiTexturesPath + '/xxx')`，不硬编码
+- 创建 UI 前先查前置（或项目公共库）有没有现成的组件
+- 贴图路径用全局变量拼接，不硬编码；前置贴图是 `($DAGUOMIAO_API_MOD_UiTexturesPath + '/xxx')`
 - Button 在 collection 内取 index 用 `args['#collection_index']`（带 `#`）
 - Toggle 取 index 用 `args['index']`（不带 `#`），取状态用 `args['state']`
