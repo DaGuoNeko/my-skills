@@ -4,7 +4,7 @@ description: >
   启动和操作网易 Minecraft 基岩版测试游戏：用大果喵工具箱启动存档、多开客户端联机测试，
   在游戏里执行代码、看日志、热重载、查 UI 树、截图、键鼠输入、控制玩家移动/放方块/打怪、性能分析。
   当用户提到启动游戏、进存档、多开、联机测试、连接游戏、执行游戏内代码、热重载、
-  看游戏日志、调试 UI、截图、操作玩家、实机测试/回归时使用。
+  看游戏日志、调试 UI、截图、操作玩家、实机测试/回归、查存档数据或模组、导入建筑/地形时使用。
 ---
 
 # 操作游戏
@@ -90,7 +90,20 @@ _result = c.GetEngineCompFactory().CreatePos(c.GetLocalPlayerId()).GetFootPos()
 - 指令用 `yield run_commands([...])` 一次批量发，基岩版语法，不能带 Java 版 NBT。
 - **限制：modpc 固定连本机 14520 端口，只能控制一个游戏。** 实测多开时它连的是**最先启动的房主**，后开的房主和来宾都控制不了。同时开了多个客户端时，先用工具箱 `execute_client_code` 读坐标，和 modpc 的 `get_position()` 对照，确认连的是目标客户端再操作；对不上就改用工具箱的 `execute_client_code` 或 `mc_input` 操作目标客户端。
 
-## 5. 收尾和安全
+## 5. 存档数据、维度和地形
+
+| 要做的事 | 工具 | 注意 |
+|---|---|---|
+| 看存档里装了哪些模组、启用状态、UUID/版本/依赖问题 | `inspect_world_packs(worldId)` | 只读静态诊断，只看存档内置的包；启动配置挂载的开发模组不在这里（看 `read_project`），没有内置包时返回 `missing-list` 属正常。不代表游戏实际加载成功；改动让用户在工具箱存档模组窗口确认 |
+| 离线查存档里保存的对象和业务数据 | `scan_world_data(worldId, requestId, scope: all/gameplay/world/entities)` → `world_data_scan_state(requestId)` 查进度或取消 → `read_world_data(requestId, view: objects/relations/fields)` 分页看 | 只读、不用开游戏，最长 120 秒；`not-found` 不代表不存在 |
+| 对比两次存档数据（改动前后、重进存档前后） | `compare_world_data(left, right)`，传两次扫描的 requestId | `partial` 表示扫描不完整，不能据此断言对象被删 |
+| 查维度实际高度范围 | `probe_dimension_runtime(..., confirmed: true)` | 指定维度时会传送过去再恢复位置 |
+| 测某个 Y 能否放方块 | `probe_build_height(..., candidateY, confirmed: true)` | 只能在 isolated 会话用；会写入测试方块再恢复 |
+| 导入 Java/基岩建筑或地形 | `terrain_prepare` → 需要从运行中的来源取区域时 `terrain_capture_source` → `terrain_preview` → `terrain_apply` → 不满意 `terrain_rollback`；随时 `terrain_status` 看进度 | **会写入目标存档**：先 `clone_world` 备份或在测试存档里做，预览给用户确认后才 apply；结果不确定时不自动重放 |
+
+扫描和读取都要自定 `requestId`，之后查状态、读结果、对比都用它。
+
+## 6. 收尾和安全
 
 - 关客户端：直接 `close_client(sessionId, confirmed: true)`，不用先手动保存游戏（用户偏好）；它只关指定客户端。多开时先关来宾再关房主，关完 `list_clients` 确认 `running: false`。
 - 已结束的客户端可用 `remove_client` 从列表移除（保留日志和存档）。
@@ -98,6 +111,6 @@ _result = c.GetEngineCompFactory().CreatePos(c.GetLocalPlayerId()).GetFootPos()
 - 多客户端共享桌面焦点：`mc_input` 和 modpc 的动作一次只对一个客户端串行进行。
 - 不要删存档。启动配置（`update_project`）、游戏设置（`update_game_options`）、工具箱设置（`update_settings`）只在用户明确要求时改，改前先 `read_project` / `read_game_options` / `read_settings` 拿 `revision`；它们不影响已运行的游戏，改完要重启对应客户端才生效。
 
-## 6. 验收
+## 7. 验收
 
-用日志、`execute_client_code` 读到的数据或 UI 树确认结果，必要时再截图。只报告实际验证过的行为；没测到的（联机同步、重进存档、发布包）明确列为待实测。
+用日志、`execute_client_code` 读到的数据或 UI 树确认结果，必要时再截图。涉及存档保存的改动，关游戏后用 `scan_world_data` + `compare_world_data` 对比前后数据。只报告实际验证过的行为；没测到的（联机同步、重进存档、发布包）明确列为待实测。
